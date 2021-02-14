@@ -36,6 +36,6 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Copy .env
-      cp .env.github .env
+      run: cp .env.github .env
     - name: Run tests
       run: cargo test --verbose

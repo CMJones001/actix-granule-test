@@ -2248,6 +2248,7 @@ checksum = "dd4945e4943ae02d15c13962b38a5b1e81eadd4b71214eee75af64a4d6a4fd64"
 name = "web-test"
 version = "0.1.0"
 dependencies = [
+ "actix-rt",
  "actix-web",
  "config",
  "deadpool-postgres",

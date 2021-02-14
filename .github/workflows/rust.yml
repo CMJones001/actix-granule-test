@@ -33,7 +33,7 @@ jobs:
     - name: Run migration
       run: diesel migration run
       env:
-          DATABASE_URL: postgres://postgress:postgress@localhost:5432/granules
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/granules
     - name: Build
       run: cargo build --verbose
     - name: Copy .env

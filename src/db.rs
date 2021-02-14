@@ -1,14 +1,14 @@
 //! Handle the gathering of data from the postgres database
+use crate::errors::{AppError, AppErrorType};
 use crate::models::{Experiment, Granule};
 use deadpool_postgres::Client;
-use std::io;
 use tokio_pg_mapper::FromTokioPostgresRow;
 
-pub async fn get_experiments(client: &Client) -> Result<Vec<Experiment>, io::Error> {
+pub async fn get_experiments(client: &Client) -> Result<Vec<Experiment>, AppError> {
     let statement = client
         .prepare("select * from experiment order by id desc")
         .await
-        .unwrap();
+        .map_err(|err| AppError::db_error(err))?;
     let experiment = client
         .query(&statement, &[])
         .await
@@ -20,11 +20,11 @@ pub async fn get_experiments(client: &Client) -> Result<Vec<Experiment>, io::Err
     Ok(experiment)
 }
 
-pub async fn get_granules(client: &Client, experiment_id: i32) -> Result<Vec<Granule>, io::Error> {
+pub async fn get_granules(client: &Client, experiment_id: i32) -> Result<Vec<Granule>, AppError> {
     let statement = client
         .prepare("select * from granule where experiment_id = $1 order by id")
         .await
-        .expect("Unable to make get_granule request");
+        .map_err(|err| AppError::db_error(err))?;
 
     let granule = client
         .query(&statement, &[&experiment_id])
@@ -41,15 +41,15 @@ pub async fn create_experiment(
     client: &Client,
     title: String,
     author: String,
-) -> Result<Experiment, io::Error> {
+) -> Result<Experiment, AppError> {
     let statement = client
         .prepare(
             "insert into experiment (title, author) values ($1, $2) returning id, title, author",
         )
         .await
-        .expect("Unable to make create_experiment request");
+        .map_err(|err| AppError::db_error(err))?;
 
-    client
+    let experiment = client
         .query(&statement, &[&title, &author])
         .await
         .expect("Error creating experiment")
@@ -57,54 +57,43 @@ pub async fn create_experiment(
         .map(|row| Experiment::from_row_ref(row).unwrap())
         .collect::<Vec<Experiment>>()
         .pop()
-        .ok_or(io::Error::new(
-            io::ErrorKind::Other,
-            "Error creating todo list",
-        ))
+        .ok_or(AppError {
+            message: Some("Unable to make create experiment".to_string()),
+            cause: None,
+            error_type: AppErrorType::DbError,
+        })?;
+
+    Ok(experiment)
 }
 
 pub async fn mark_granule_valid(
     client: &Client,
     experiment_id: i32,
     granule_id: i32,
-) -> Result<(), io::Error> {
+) -> Result<bool, AppError> {
+    let query =
+        "update granule set valid = true where experiment_id = $1 and id = $2 and valid = false";
     let statement = client
-        .prepare(
-            "update granule set valid = true where experiment_id = $1 and id = $2 and valid = false",
-        )
+        .prepare(query)
         .await
-        .expect("Unable to make mark_granule_valid request");
+        .map_err(|err| AppError::db_error(err))?;
 
     let result = client
         .execute(&statement, &[&experiment_id, &granule_id])
         .await
         .expect("Error making granule valid.");
 
-    if result == 1 {
-        Ok(())
-    } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Failed to make granule valid",
-        ))
-    }
-    // match result {
-    //     ref updated if *updated == 1 => Ok(()),
-    //     _ => Err(io::Error::new(
-    //         io::ErrorKind::Other,
-    //         "Failed to make granule valid",
-    //     )),
-    // }
+    Ok(result == 1)
 }
 
 pub async fn get_authors_experiment(
     client: &Client,
     author: String,
-) -> Result<Vec<Experiment>, io::Error> {
+) -> Result<Vec<Experiment>, AppError> {
     let statement = client
         .prepare("select * from experiment where lower(author) = lower($1) order by id")
         .await
-        .expect("Unable to make get_authors_experiment request");
+        .map_err(|err| AppError::db_error(err))?;
 
     let experiments = client
         .query(&statement, &[&author])

@@ -74,3 +74,38 @@ impl ResponseError for AppError {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_message() {
+        let db_error = AppError {
+            message: None,
+            cause: None,
+            error_type: AppErrorType::DbError,
+        };
+        assert_eq!(
+            db_error.message(),
+            "Unexpected database error".to_string(),
+            "Default message should be shown"
+        );
+    }
+
+    #[test]
+    fn test_custom_message() {
+        let custom_msg = "Unable to add new author".to_string();
+
+        let db_error = AppError {
+            message: Some(custom_msg.clone()),
+            cause: None,
+            error_type: AppErrorType::DbError,
+        };
+        assert_eq!(
+            db_error.message(),
+            custom_msg,
+            "Custom message should be used"
+        );
+    }
+}

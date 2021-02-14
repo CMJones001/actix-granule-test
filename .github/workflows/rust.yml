@@ -13,10 +13,29 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    postgres: 
+        image: postgres
+        env:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: granules
+        ports:
+        - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+
 
     steps:
     - uses: actions/checkout@v2
+    - name: Install diesel_cli
+      run: cargo install diesel_cli --no-default-features --features postgres
+    - name: Run migration
+      run: diesel migration run
+      env:
+          DATABASE_URL: postgres://postgress:postgress@localhost:5432/granules
     - name: Build
       run: cargo build --verbose
+    - name: Copy .env
+      cp .env.github .env
     - name: Run tests
       run: cargo test --verbose

@@ -29,7 +29,7 @@ pub async fn get_granules(client: &Client, experiment_id: i32) -> Result<Vec<Gra
     let granule = client
         .query(&statement, &[&experiment_id])
         .await
-        .expect("Error getting granule")
+        .map_err(|err| AppError::db_error(err))?
         .iter()
         .map(|row| Granule::from_row_ref(row).expect("Unable to unwrap granule"))
         .collect::<Vec<Granule>>();
@@ -52,7 +52,7 @@ pub async fn create_experiment(
     let experiment = client
         .query(&statement, &[&title, &author])
         .await
-        .expect("Error creating experiment")
+        .map_err(|err| AppError::db_error(err))?
         .iter()
         .map(|row| Experiment::from_row_ref(row).unwrap())
         .collect::<Vec<Experiment>>()
@@ -81,7 +81,7 @@ pub async fn mark_granule_valid(
     let result = client
         .execute(&statement, &[&experiment_id, &granule_id])
         .await
-        .expect("Error making granule valid.");
+        .map_err(|err| AppError::db_error(err))?;
 
     Ok(result == 1)
 }
@@ -98,7 +98,7 @@ pub async fn get_authors_experiment(
     let experiments = client
         .query(&statement, &[&author])
         .await
-        .expect("Error getting experiments")
+        .map_err(|err| AppError::db_error(err))?
         .iter()
         .map(|row| Experiment::from_row_ref(row).expect("Unable to unwrap experiments"))
         .collect::<Vec<Experiment>>();

@@ -18,7 +18,7 @@ pub struct AppError {
 impl AppError {
     /// Nicely formatted error message
     /// Use a default message that depends on the error type if no message is provided
-    fn message(&self) -> String {
+    pub fn message(&self) -> String {
         match self {
             AppError {
                 message: Some(message),

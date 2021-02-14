@@ -1,7 +1,14 @@
 //! Models for the data structures within the database
 
+use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
+use slog::Logger;
 use tokio_pg_mapper_derive::PostgresMapper;
+
+pub struct AppState {
+    pub pool: Pool,
+    pub log: Logger,
+}
 
 #[derive(Serialize)]
 pub struct Status {

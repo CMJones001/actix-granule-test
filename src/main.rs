@@ -35,13 +35,16 @@ async fn main() -> std::io::Result<()> {
     // Launch the app
     HttpServer::new(move || {
         App::new()
-            .data(pool.clone())
-            .service(handler::status)
+            .data(models::AppState {
+                pool: pool.clone(),
+                log: log.clone(),
+            })
             .service(handler::get_experiments)
             .service(handler::add_experiment)
             .service(handler::get_experiment_by_author)
             .service(handler::get_granules)
             .service(handler::mark_granule_valid)
+            .service(handler::status)
     })
     .keep_alive(10)
     .bind(format!("{}:{}", config.server.host, config.server.port))?

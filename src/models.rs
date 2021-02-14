@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use slog::Logger;
 use tokio_pg_mapper_derive::PostgresMapper;
 
+#[derive(Clone)]
 pub struct AppState {
     pub pool: Pool,
     pub log: Logger,

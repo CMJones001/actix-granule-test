@@ -51,7 +51,7 @@ pub async fn get_experiments(state: web::Data<AppState>) -> Result<impl Responde
     json_or_err(result, log)
 }
 
-#[get("/exp/{experiment_id}/granules{_:/?}")]
+#[get("/exp/{experiment_id}/granules")]
 pub async fn get_granules(
     state: web::Data<AppState>,
     path: web::Path<(i32,)>,
@@ -105,5 +105,20 @@ pub async fn add_experiment(
 
     let CreateExperiment { title, author } = json.into_inner();
     let result = db::create_experiment(&client, title, author).await;
+    json_or_err(result, log)
+}
+
+#[post("/exp/{experiment_id}/granules")]
+pub async fn add_granule(
+    state: web::Data<AppState>,
+    json: web::Json<CreateGranule>,
+    path: web::Path<i32>,
+) -> Result<impl Responder, AppError> {
+    let log = state.log.new(o!("handler" => "add_granule"));
+    let client = get_client(state.pool.clone(), log.clone()).await?;
+
+    let web::Path(experiment_id) = path;
+    let granule_cmd: CreateGranule = json.into_inner();
+    let result = db::create_granule(&client, granule_cmd, experiment_id).await;
     json_or_err(result, log)
 }

@@ -3,12 +3,14 @@
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use slog::Logger;
+use tera::Tera;
 use tokio_pg_mapper_derive::PostgresMapper;
 
 #[derive(Clone)]
 pub struct AppState {
     pub pool: Pool,
     pub log: Logger,
+    pub tera: Tera,
 }
 
 #[derive(Serialize)]
@@ -37,6 +39,13 @@ pub struct Granule {
     pub valid: bool,
     pub area: f32,
     pub experiment_id: i32,
+}
+
+#[derive(Deserialize, Serialize, PostgresMapper, Debug)]
+#[pg_mapper(table = "granules")]
+pub struct CreateGranule {
+    pub valid: bool,
+    pub area: f32,
 }
 
 #[derive(Deserialize, Serialize)]

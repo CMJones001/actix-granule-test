@@ -1,6 +1,6 @@
 //! Handle the gathering of data from the postgres database
 use crate::errors::{AppError, AppErrorType};
-use crate::models::{Experiment, Granule};
+use crate::models::{CreateGranule, Experiment, Granule};
 use deadpool_postgres::Client;
 use tokio_pg_mapper::FromTokioPostgresRow;
 
@@ -64,6 +64,36 @@ pub async fn create_experiment(
         })?;
 
     Ok(experiment)
+}
+
+pub async fn create_granule(
+    client: &Client,
+    granule_cmd: CreateGranule,
+    experiment_id: i32,
+) -> Result<Granule, AppError> {
+    let CreateGranule { valid, area } = granule_cmd;
+    let statement = client
+        .prepare(
+            "insert into granule (valid, area, experiment_id) values ($1, $2, $3) returning id, valid, area, experiment_id",
+        )
+        .await
+        .map_err(|err| AppError::db_error(err))?;
+
+    let granule = client
+        .query(&statement, &[&valid, &area, &experiment_id])
+        .await
+        .map_err(|err| AppError::db_error(err))?
+        .iter()
+        .map(|row| Granule::from_row_ref(row).unwrap())
+        .collect::<Vec<Granule>>()
+        .pop()
+        .ok_or(AppError {
+            message: Some("Unable to add granule".to_string()),
+            cause: None,
+            error_type: AppErrorType::DbError,
+        })?;
+
+    Ok(granule)
 }
 
 pub async fn mark_granule_valid(

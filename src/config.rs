@@ -4,6 +4,7 @@ use config::{self, ConfigError};
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use slog::{o, Drain, Logger};
+use tera::Tera;
 use tokio_postgres::NoTls;
 
 #[derive(Deserialize)]
@@ -35,5 +36,17 @@ impl Config {
 
     pub fn configure_pool(&self) -> Pool {
         self.pg.create_pool(NoTls).unwrap()
+    }
+
+    pub fn configure_tera(&self) -> Tera {
+        let mut tera = match Tera::new("templates/**/*.html") {
+            Ok(t) => t,
+            Err(e) => {
+                eprintln!("Parsing errors: {}", e);
+                std::process::exit(1);
+            }
+        };
+        tera.autoescape_on(vec!["html"]);
+        tera
     }
 }
